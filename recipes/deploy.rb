@@ -33,15 +33,15 @@ node[:deploy].each do |application, deploy|
       })
     end
 
-    service "sidekiq-#{application}" do
+    service "workers-#{application}" do
       provider Chef::Provider::Service::Upstart
-      supports stop: true, start: true, restart: true, status: true
+      supports stop: true, start: true, restart: true
     end
 
     # always restart sidekiq on deploy since we assume the code must need to be reloaded
     bash 'restart_sidekiq' do
       code "echo noop"
-      notifies :restart, "service[sidekiq-#{application}]"
+      notifies :restart, "service[workers-#{application}]"
     end
   end
 end
