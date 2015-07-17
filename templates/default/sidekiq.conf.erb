@@ -5,17 +5,18 @@
 # NOTE: This is heavily inspired by Sidekiq's example sidekiq.conf
 #
 # Save this config as /etc/init/sidekiq-APPNAME.conf then mange sidekiq with:
-#   sudo start sidekiq-<%= @app_name %>
-#   sudo stop sidekiq-<%= @app_name %>
-#   sudo status sidekiq-<%= @app_name %>
+#   sudo start sidekiq-<%= @app_name %> index=0
+#   sudo stop sidekiq-<%= @app_name %> index=0
+#   sudo status sidekiq-<%= @app_name %> index=0
+#
+# Hack Upstart's reload command to 'quiet' Sidekiq:
+#
+#   sudo reload sidekiq-<%= @app_name %> index=0
 #
 # or use the service command:
 #   sudo service sidekiq-<%= @app_name %> {start,stop,restart,status}
 
 description "Sidekiq Upstart process"
-
-start on started network-services
-stop on stopping network-services
 
 # change to match your deployment user
 setuid <%= @user %>
@@ -24,8 +25,15 @@ setgid <%= @group %>
 respawn
 respawn limit 3 30
 
-# TERM and USR1 are sent by sidekiqctl when stopping sidekiq.  Without declaring these as normal exit codes, it just respawns.
-normal exit 0 TERM USR1
+# TERM is sent by sidekiqctl when stopping sidekiq. Without declaring these as
+# normal exit codes, it just respawns.
+normal exit 0 TERM
+
+# Older versions of Upstart might not support the reload command and need
+# this commented out.
+reload signal USR1
+
+instance $index
 
 chdir "<%= @release_path %>"
 

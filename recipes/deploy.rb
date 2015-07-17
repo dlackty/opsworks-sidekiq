@@ -2,7 +2,7 @@ node[:deploy].each do |application, deploy|
   if deploy['sidekiq']
     sidekiq_config = deploy['sidekiq']
     release_path = ::File.join(deploy[:deploy_to], 'current')
-    start_command = sidekiq_config['start_command'] || "bundle exec sidekiq -e production -C config/sidekiq.yml -r ./config/boot.rb 2>&1 >> log/sidekiq.log"
+    start_command = sidekiq_config['start_command'] || "bundle exec sidekiq -i ${index} -e production -C config/sidekiq.yml -r ./config/boot.rb 2>&1 >> log/sidekiq.log"
     env = deploy['environment_variables'] || {}
 
     template "setup sidekiq.conf" do
@@ -18,6 +18,18 @@ node[:deploy].each do |application, deploy|
         release_path: release_path,
         start_command: start_command,
         env: env,
+      })
+    end
+
+    template "setup workers.conf" do
+      path "/etc/init/workers-#{application}.conf"
+      source "workers.conf.erb"
+      owner "root"
+      group "root"
+      mode 0644
+      variables({
+        app_name: application,
+        num_workers: sidekiq_config['num_workers'] || 2
       })
     end
 

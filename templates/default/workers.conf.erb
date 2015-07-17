@@ -1,0 +1,37 @@
+# This example config should work with Ubuntu 12.04+.  It
+# allows you to manage multiple Sidekiq instances with
+# Upstart, Ubuntu's native service management tool.
+#
+# NOTE: This is heavily inspired by Sidekiq's example sidekiq.conf
+#
+# See sidekiq.conf for how to manage a single Sidekiq instance.
+#
+# Use "stop workers-<%= @app_name %>" to stop all Sidekiq instances.
+# Use "start workers-<%= @app_name %>" to start all instances.
+# Use "restart workers-<%= @app_name %>" to restart all instances.
+# Crazy, right?
+#
+
+description "manages the set of sidekiq processes"
+
+# This starts upon bootup and stops on shutdown
+start on started network-services
+stop on stopping network-services
+
+# Set this to the number of Sidekiq processes you want
+# to run on this machine
+env NUM_WORKERS=<%= @num_workers %>
+
+pre-start script
+  for i in `seq 1 ${NUM_WORKERS}`
+  do
+    start sidekiq-<%= @app_name %> index=$i
+  done
+end script
+
+post-stop script
+  for i in `seq 1 ${NUM_WORKERS}`
+  do
+    stop sidekiq-<%= @app_name %> index=$i
+  done
+end script
